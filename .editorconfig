@@ -1,0 +1,26 @@
+root = true
+
+# Default Settings
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+tab_width = 4
+
+# Solution Settings
+[*.sln]
+indent_style = tab
+indent_size = 4
+
+# XML Settings
+
+# MSBuild Settings (Should match XML Settings)
+[*.{props,vcxproj}]
+indent_style = space
+indent_size = 2
+
+# C++ Source Code Settings
+[*.{c,cc,cpp,cxx,h,hh,hpp,hxx}]
+indent_style = tab
+indent_size = 4

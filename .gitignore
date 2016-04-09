@@ -1,0 +1,18 @@
+# Visual Studio Caches:
+*.*sdf
+*.opendb
+
+# Build Files:
+/[Bb]in
+/[Oo]bj
+/ipch
+
+# Per-User Options:
+*.suo
+*.user
+*.aps
+
+# Project Generated Files: ntUPSd
+/ntUPSd/LoggedEvents*.bin
+/ntUPSd/LoggedEvents.rc
+/ntUPSd/LoggedEvents.h
