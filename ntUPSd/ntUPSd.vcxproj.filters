@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;rc2;rct;resx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\Data">
+      <UniqueIdentifier>{b55d729d-a95e-4b00-a1b3-7a9b2e4bcf1c}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;bin;rgs;gif;jpg;jpeg;jpe;tiff;tif;png;wav;mfcribbon-ms;mc</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{3ca73e0c-8dbd-4a47-92f6-fb4f6932d334}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ntUPSd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ntUPSd.Server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Battery.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LoggedEvents.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ntUPSd.Server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandProcessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandProcessor.inl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerVersion.h">
+      <Filter>Resource Files\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Battery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ntUPSd.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="LoggedEvents.rc">
+      <Filter>Generated Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <CompileMessages Include="LoggedEvents.mc">
+      <Filter>Resource Files\Data</Filter>
+    </CompileMessages>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ntUPSd.rc2">
+      <Filter>Resource Files\Data</Filter>
+    </None>
+    <CompiledMessages Include="LoggedEvents_MSG0000.bin">
+      <Filter>Resource Files\Data</Filter>
+    </CompiledMessages>
+    <CompiledMessages Include="LoggedEvents_MSG0409.bin">
+      <Filter>Resource Files\Data</Filter>
+    </CompiledMessages>
+  </ItemGroup>
+</Project>
