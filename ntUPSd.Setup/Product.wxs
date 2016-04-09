@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Network UPS Tools Daemon for Windows"
+           Language="1033"
+           Version="!(bind.FileVersion.ntUPSdExe)"
+           Manufacturer="Matthew Holder"
+           UpgradeCode="EAECA5A7-7750-4464-B0CA-CF966669DE34">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="ntUPSd" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <!-- Select the appropriate `Program Files` folder. -->
+  <?if $(var.Platform) = x64 ?>
+    <?define ProgramFilesFolderId = ProgramFiles64Folder ?>
+  <?else?>
+    <?define ProgramFilesFolderId = ProgramFilesFolder ?>
+  <?endif?>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="$(var.ProgramFilesFolderId)">
+        <Directory Id="INSTALLFOLDER" Name="ntUPSd" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="ntUPSd">
+        <File Source="$(var.ntUPSd.TargetPath)" KeyPath="yes" Vital="yes" Id="ntUPSdExe" />
+        <ServiceInstall
+          Id="Install_ntUPSd_Service"
+          Type="ownProcess"
+          Name="ntUPSd"
+          DisplayName="Network UPS Tools Server"
+          Description="A Network UPS Tools upsd-like server for accessing UPS status data remotely."
+          Start="auto"
+          Account="[SERVICEACCOUNT]"
+          Password="[SERVICEPASSWORD]"
+          ErrorControl="normal"
+          Vital="yes" />
+        <ServiceControl
+          Id="Start_ntUPSd_Service"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Name="ntUPSd" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

@@ -35,6 +35,7 @@ public :
 			return hr;
 		}
 
+		SetServiceStatus(SERVICE_RUNNING);
 		return S_OK;
 	}
 
@@ -45,6 +46,7 @@ public :
 	{
 		// Clean-up code here...
 		m_pListenerClient.Free();
+		SetServiceStatus(SERVICE_STOPPED);
 
 		HRESULT hr = __super::PostMessageLoop();
 		if (FAILED(hr))
@@ -60,8 +62,8 @@ public :
 		if (m_bService)
 		{
 			// TODO : Call CoInitializeSecurity and provide the appropriate security settings for your service
-			// Suggested - PKT Level Authentication, 
-			// Impersonation Level of RPC_C_IMP_LEVEL_IDENTIFY 
+			// Suggested - PKT Level Authentication,
+			// Impersonation Level of RPC_C_IMP_LEVEL_IDENTIFY
 			// and an appropriate Non NULL Security Descriptor.
 		}
 
@@ -94,7 +96,7 @@ using CLocalPtr = ::ATL::CHeapPtr<T, CLocalAllocator>;
 */
 EXTERN_C INT WINAPI _tWinMain(
 	_In_ HINSTANCE /*hInstance*/,
-	_In_opt_ HINSTANCE /*hPrevInstance*/, 
+	_In_opt_ HINSTANCE /*hPrevInstance*/,
 	_In_z_ LPTSTR /*lpCmdLine*/,
 	_In_ INT nShowCmd)
 {

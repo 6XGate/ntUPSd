@@ -7,6 +7,7 @@ namespace CTL
 	{
 	public:
 		HRESULT Start(_In_ int nShowCmd) noexcept;
+		HRESULT RegisterClassObjects(...) noexcept { return S_OK; }
 	};
 }
 
