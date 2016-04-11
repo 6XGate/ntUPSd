@@ -1,4 +1,5 @@
 #pragma once
+#include "ntUPSd.Core.Base.h"
 
 namespace CTL
 {

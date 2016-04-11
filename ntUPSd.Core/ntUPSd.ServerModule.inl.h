@@ -4,7 +4,15 @@
 namespace CTL
 {
 	template <typename Derived, UINT idServiceName>
-	HRESULT CServerModuleT<Derived, idServiceName>::Start(_In_ int nShowCmd) noexcept
+	inline INT CServerModuleT<Derived, idServiceName>::WinMain(INT nShowCmd) noexcept
+	{
+		_set_se_translator(&TranslateStructuredException);
+
+		return __super::WinMain(nShowCmd);
+	}
+
+	template <typename Derived, UINT idServiceName>
+	inline HRESULT CServerModuleT<Derived, idServiceName>::Start(_In_ int nShowCmd) noexcept
 	{
 		SERVICE_TABLE_ENTRY st[] =
 		{
@@ -49,5 +57,17 @@ namespace CTL
 
 		m_status.dwWin32ExitCode = Run(nShowCmd);
 		return ::AtlHresultFromWin32(m_status.dwWin32ExitCode);
+	}
+
+	template <typename Derived, UINT idServiceName>
+	inline HRESULT CServerModuleT<Derived, idServiceName>::RegisterClassObjects(...) noexcept
+	{
+		return S_OK;
+	}
+
+	template <typename Derived, UINT idServiceName>
+	inline void CServerModuleT<Derived, idServiceName>::TranslateStructuredException(UINT nCode, EXCEPTION_POINTERS *pEx)
+	{
+		AtlThrow(HRESULT_FROM_NT(nCode));
 	}
 }

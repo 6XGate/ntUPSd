@@ -28,6 +28,9 @@
 // Standard C++ Run-Time Libraries:
 #include <utility>
 
+// Visual C++ Run-Time Libraries:
+#include <eh.h>
+
 // ATL:
 #include <atlbase.h>
 #include <atlcom.h>
