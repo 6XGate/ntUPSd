@@ -7,7 +7,7 @@ standard Windows programing interfaces for easier setup.
 
 ## Installation
 
-- _todo_
+- Run the appropriate MSI for your processor platform.
 
 ## TODOs
 
