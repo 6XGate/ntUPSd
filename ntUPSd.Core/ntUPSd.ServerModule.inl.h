@@ -86,6 +86,7 @@ namespace CTL
 	template <typename Derived, UINT idServiceName>
 	inline void CServerModuleT<Derived, idServiceName>::TranslateStructuredException(UINT nCode, EXCEPTION_POINTERS *pEx)
 	{
+		UNREFERENCED_PARAMETER(pEx);
 		AtlThrow(HRESULT_FROM_NT(nCode));
 	}
 }

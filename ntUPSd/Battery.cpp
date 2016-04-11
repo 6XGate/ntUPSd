@@ -151,7 +151,7 @@ HRESULT CBattery::ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cchValue = wcslen(pszValue), cchRequired = 0;
+		DWORD cchValue = static_cast<DWORD>(wcslen(pszValue)), cchRequired = 0;
 		if (cchValue == 0)
 		{
 			strValue.Empty();
@@ -186,7 +186,6 @@ HRESULT CBattery::ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept
 
 HRESULT CBattery::GetStringInfo(HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &strValue) noexcept
 {
-	HRESULT hr = S_OK;
 	DWORD cchBuffer = 128;
 	CAtlArray<WCHAR> pszBuffer;
 	BATTERY_QUERY_INFORMATION bqi = { nBatteryTag, eInfoLevel };
@@ -365,8 +364,6 @@ STDMETHODIMP CBatteryDynamicVariable::RenderResult(CStringA &strResult) noexcept
 
 HRESULT CBatteryCollection::LoadBatteries() noexcept
 {
-	HRESULT hr = S_OK;
-	bool fHasBatteries = false;
 	HDEVINFO hDev = SetupDiGetClassDevs(&GUID_DEVCLASS_BATTERY, nullptr, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 	if (hDev != INVALID_HANDLE_VALUE)
 	{

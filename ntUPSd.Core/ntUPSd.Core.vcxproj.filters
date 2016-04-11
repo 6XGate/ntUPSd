@@ -54,10 +54,10 @@
     <ClInclude Include="ntUPSd.WorkerUtilities.inl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ntUPSd.LineFormatter.h">
+    <ClInclude Include="ntUPSd.Formatter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ntUPSd.LineFormatter.inl.h">
+    <ClInclude Include="ntUPSd.Formatter.inl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,7 +80,7 @@
     <ClCompile Include="ntUPSd.WorkerUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ntUPSd.LineFormatter.cpp">
+    <ClCompile Include="ntUPSd.Formatter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -173,7 +173,7 @@ namespace CTL
 	HRESULT CReplDriverBase::WriteResult(LPCSTR pszLine) noexcept
 	{
 		// Don't echo empty lines.
-		size_t cchLine = strlen(pszLine);
+		DWORD cchLine = static_cast<DWORD>(strlen(pszLine));
 		if (cchLine == 0)
 		{
 			return S_OK;

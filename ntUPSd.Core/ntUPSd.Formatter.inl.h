@@ -17,7 +17,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #pragma once
-#include "ntUPSd.LineFormatter.h"
+#include "ntUPSd.Formatter.h"
 
 namespace CTL
 {
@@ -70,14 +70,14 @@ namespace CTL
 				{
 				case '%':
 					// Escaping a percent (_%_), take the current format line and pass it to a recall.
-					rstrResult.Append(rpszFormat, pchPos - rpszFormat);
+					rstrResult.Append(rpszFormat, static_cast<int>(pchPos - rpszFormat));
 					rpszFormat = 1 + pchPos;
 					hr = TextParse(rstrResult, rpszFormat, std::forward<Arg>(arg));
 					break;
 
 				case '$':
 					// Append the current format string and convert the value as well.
-					rstrResult.Append(rpszFormat, --pchPos - rpszFormat);
+					rstrResult.Append(rpszFormat, static_cast<int>(--pchPos - rpszFormat));
 					rpszFormat = 2 + pchPos;
 					hr = ToString(rstrResult, std::forward<Arg>(arg));
 					break;

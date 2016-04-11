@@ -9,7 +9,17 @@
     <_PropertySheetDisplayName>Solution Common</_PropertySheetDisplayName>
     <OutDir>$(MSBuildThisFileDirectory)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)obj\$(PlatformShortName)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
+    <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <EnablePREfast>false</EnablePREfast>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

@@ -246,12 +246,17 @@ LPCSTR CCommandProcessor::GetPart(_Inout_z_ LPSTR &pszLine) noexcept
 
 HRESULT CCommandProcessor::OnStartTls(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(pszParameters);
+	UNREFERENCED_PARAMETER(rpResult);
+
 	// TLS is currently not supported.
 	return NUT_E_NOTSUPPORTED;
 }
 
 HRESULT CCommandProcessor::OnUserName(LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(rpResult);
+
 	_ATLTRY
 	{
 		LPCSTR pszUserName = GetPart(pszParameters);
@@ -280,6 +285,8 @@ HRESULT CCommandProcessor::OnUserName(LPSTR pszParameters, CComPtr<IReplResult> 
 
 HRESULT CCommandProcessor::OnPassWord(LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(rpResult);
+
 	_ATLTRY
 	{
 		LPCSTR pszPassWord = GetPart(pszParameters);
@@ -360,11 +367,16 @@ HRESULT CCommandProcessor::OnList(_In_z_ LPSTR pszParameters, CComPtr<IReplResul
 
 HRESULT CCommandProcessor::OnLogin(_In_z_ LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(pszParameters);
+	UNREFERENCED_PARAMETER(rpResult);
+
 	return S_OK;
 }
 
 HRESULT CCommandProcessor::OnLogout(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(pszParameters);
+
 	rpResult = _ATL_NEW CSimpleResult("OK Goodbye");
 	if (rpResult == nullptr)
 	{
@@ -409,6 +421,8 @@ HRESULT CCommandProcessor::OnGetVar(LPSTR pszParameters, CComPtr<IReplResult>& r
 
 HRESULT CCommandProcessor::OnListUps(_In_z_ LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
+	UNREFERENCED_PARAMETER(pszParameters);
+
 	rpResult = m_pBatteries;
 	return S_OK;
 }

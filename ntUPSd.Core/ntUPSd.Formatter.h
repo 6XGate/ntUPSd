@@ -67,4 +67,4 @@ namespace CTL
 	};
 }
 
-#include "ntUPSd.LineFormatter.inl.h"
+#include "ntUPSd.Formatter.inl.h"

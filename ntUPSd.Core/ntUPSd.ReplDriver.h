@@ -18,7 +18,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 */
 #pragma once
 #include "ntUPSd.Core.Base.h"
-#include "ntUPSd.LineFormatter.h"
+#include "ntUPSd.Formatter.h"
 
 namespace CTL
 {

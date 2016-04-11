@@ -71,11 +71,16 @@ HRESULT CServerWorker::Initialize() noexcept
 
 BOOL CClient::Initialize(void *pvParam) noexcept
 {
+	UNREFERENCED_PARAMETER(pvParam);
+
 	return TRUE;
 }
 
 void CClient::Execute(RequestType request, void *pWorkerParam, OVERLAPPED *pOverlapped) noexcept
 {
+	UNREFERENCED_PARAMETER(pWorkerParam);
+	UNREFERENCED_PARAMETER(pOverlapped);
+
 	CSocket hClient(request);
 	CReplDriver<CCommandProcessor> repl;
 	HRESULT hr = repl.Initialize(hClient, hClient);
@@ -101,7 +106,7 @@ void CClient::Execute(RequestType request, void *pWorkerParam, OVERLAPPED *pOver
 
 void CClient::Terminate(void *pvParam) noexcept
 {
-
+	UNREFERENCED_PARAMETER(pvParam);
 }
 
 HRESULT CServer::Initialize(HANDLE hAcceptEvent) noexcept
@@ -197,5 +202,8 @@ HRESULT CServer::OnConnect() noexcept
 
 HRESULT CServerOnConnectProxy::Execute(_In_opt_ DWORD_PTR dwParam, _In_ HANDLE hObject) noexcept
 {
+	UNREFERENCED_PARAMETER(dwParam);
+	UNREFERENCED_PARAMETER(hObject);
+
 	return m_pTarget->OnConnect();
 }
