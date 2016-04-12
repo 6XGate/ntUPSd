@@ -149,12 +149,12 @@ namespace CTL
 		return reinterpret_cast<SOCKET>(m_h);
 	}
 
-	void CSocket::Attach(SOCKET s) throw()
+	void CSocket::Attach(SOCKET s) noexcept
 	{
 		__super::Attach(reinterpret_cast<HANDLE>(s));
 	}
 
-	SOCKET CSocket::Detach() throw()
+	SOCKET CSocket::Detach() noexcept
 	{
 		return reinterpret_cast<SOCKET>(__super::Detach());
 	}
@@ -280,5 +280,228 @@ namespace CTL
 		}
 
 		return S_OK;
+	}
+
+	HRESULT CSocketStream::New(SOCKET s, HANDLE hCancelEvent, IStream **ppstm) noexcept
+	{
+		if (ppstm == nullptr)
+		{
+			return E_POINTER;
+		}
+
+		::ATL::CComObject<CSocketStream> *pstm = nullptr;
+		HRESULT hr = ::ATL::CComObject<CSocketStream>::CreateInstance(&pstm);
+		if (SUCCEEDED(hr))
+		{
+			if (hCancelEvent != NULL)
+			{
+				::ATL::CHandle hReadEvent(::CreateEvent(nullptr, TRUE, FALSE, nullptr));
+				if (hReadEvent == NULL)
+				{
+					return ::ATL::AtlHresultFromLastError();
+				}
+
+				if (::WSAEventSelect(s, hReadEvent, FD_READ) == SOCKET_ERROR)
+				{
+					return CWinSock::GetLastError();
+				}
+
+				if (::WSAEventSelect(s, hCancelEvent, FD_READ) == SOCKET_ERROR)
+				{
+					DWORD dwLastError = ::WSAGetLastError();
+					::WSAEventSelect(s, NULL, 0);
+
+					return ::ATL::AtlHresultFromWin32(dwLastError);
+				}
+
+				pstm->m_hEventHandles[0].Attach(hCancelEvent);
+				pstm->m_hEventHandles[1].Attach(hReadEvent.Detach());
+			}
+
+			pstm->m_hSocket.Attach(s);
+			pstm->AddRef();
+		}
+
+		*ppstm = pstm;
+		return hr;
+	}
+
+	STDMETHODIMP CSocketStream::Read(void *pv, ULONG cb, ULONG *pcbRead) noexcept
+	{
+		if (pv == nullptr)
+		{
+			return E_INVALIDARG;
+		}
+
+		if (cb > INT_MAX)
+		{
+			return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+		}
+
+		if (m_hEventHandles[0] != NULL)
+		{
+			DWORD dwResult = ::WaitForMultipleObjects(_countof(m_hEventHandles), reinterpret_cast<HANDLE*>(m_hEventHandles), FALSE, INFINITE);
+			switch (dwResult)
+			{
+			case WAIT_OBJECT_0 + 0:
+				// The read was cancelled.
+				return E_ABORT;
+			case WAIT_OBJECT_0 + 1:
+				// There is data waiting.
+				break;
+			case WAIT_FAILED:
+				// Something went wrong while the wait.
+				return ::ATL::AtlHresultFromLastError();
+			case WAIT_TIMEOUT:
+			default:
+				// This should not happen.
+				return E_FAIL;
+			}
+		}
+
+		return m_hSocket.Receive(pv, static_cast<int>(cb), reinterpret_cast<int*>(pcbRead));
+	}
+
+	STDMETHODIMP CSocketStream::Write(const void *pv, ULONG cb, ULONG *pcbWritten) noexcept
+	{
+		if (pv == nullptr)
+		{
+			return E_INVALIDARG;
+		}
+
+		if (cb > INT_MAX)
+		{
+			return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+		}
+
+		return m_hSocket.Send(pv, static_cast<int>(cb), reinterpret_cast<int*>(pcbWritten));
+	}
+
+	STDMETHODIMP CSocketStream::Seek(LARGE_INTEGER dlibMove, DWORD dwOrigin, ULARGE_INTEGER *plibNewPosition) noexcept
+	{
+		UNREFERENCED_PARAMETER(dlibMove);
+		UNREFERENCED_PARAMETER(dwOrigin);
+		UNREFERENCED_PARAMETER(plibNewPosition);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::SetSize(ULARGE_INTEGER libNewSize) noexcept
+	{
+		UNREFERENCED_PARAMETER(libNewSize);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::CopyTo(IStream *pstm, ULARGE_INTEGER cb, ULARGE_INTEGER *pcbRead, ULARGE_INTEGER *pcbWritten) noexcept
+	{
+		if (pstm == nullptr)
+		{
+			return E_INVALIDARG;
+		}
+
+		if (cb.QuadPart == 0)
+		{
+			return S_OK;
+		}
+
+		::ATL::CHeapPtr<BYTE> pBuffer;
+		if (!pBuffer.AllocateBytes(4194304))
+		{
+			return E_OUTOFMEMORY;
+		}
+
+		ULARGE_INTEGER cbTempRead;
+		if (pcbRead == nullptr)
+		{
+			pcbRead = &cbTempRead;
+		}
+
+		ULARGE_INTEGER cbTempWritten;
+		if (pcbWritten == nullptr)
+		{
+			pcbWritten = &cbTempWritten;
+		}
+
+		HRESULT hr;
+		while (cb.QuadPart > 0)
+		{
+			ULONG cbRead, cbToRead = cb.QuadPart > 4194304 ? 4194304 : cb.LowPart;
+			hr = Read(pBuffer.m_pData, cbToRead, &cbRead);
+			if (FAILED(hr))
+			{
+				return hr;
+			}
+
+			if (cbRead == 0)
+			{
+				return __HRESULT_FROM_WIN32(WSAEDISCON);
+			}
+
+			pcbRead->QuadPart += cbRead;
+			ULONG cbToWrite = cbRead;
+			while (cbToWrite > 0)
+			{
+				ULONG cbWritten;
+				hr = pstm->Write(pBuffer.m_pData, cbToWrite, &cbWritten);
+				if (FAILED(hr))
+				{
+					return hr;
+				}
+
+				pcbWritten->QuadPart += cbWritten;
+				cbToWrite -= cbWritten;
+			}
+
+			cb.QuadPart -= cbRead;
+		}
+
+		return S_OK;
+	}
+
+	STDMETHODIMP CSocketStream::Commit(DWORD grfCommitFlags) noexcept
+	{
+		UNREFERENCED_PARAMETER(grfCommitFlags);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::Revert() noexcept
+	{
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::LockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) noexcept
+	{
+		UNREFERENCED_PARAMETER(libOffset);
+		UNREFERENCED_PARAMETER(cb);
+		UNREFERENCED_PARAMETER(dwLockType);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::UnlockRegion(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) noexcept
+	{
+		UNREFERENCED_PARAMETER(libOffset);
+		UNREFERENCED_PARAMETER(cb);
+		UNREFERENCED_PARAMETER(dwLockType);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+	}
+
+	STDMETHODIMP CSocketStream::Stat(STATSTG *pstatstg, DWORD grfStatFlag) noexcept
+	{
+		if (pstatstg == nullptr)
+		{
+			return E_INVALIDARG;
+		}
+
+		if (grfStatFlag == 0)
+		{
+			return S_OK;
+		}
+
+		return E_NOTIMPL;
+	}
+
+	STDMETHODIMP CSocketStream::Clone(IStream **ppstm) noexcept
+	{
+		UNREFERENCED_PARAMETER(ppstm);
+		return __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
 	}
 }

@@ -24,7 +24,7 @@ class CNetworkUpsDaemonModule : public CServerModuleT<CNetworkUpsDaemonModule, I
 public :
 	DECLARE_REGISTRY_APPID_RESOURCEID(INFINITE, "{153BA2A2-89A0-425C-81E4-70A5FBA48498}")
 
-	HRESULT PreMessageLoop(_In_ int nShowCmd) throw()
+	HRESULT PreMessageLoop(_In_ int nShowCmd) noexcept
 	{
 		HRESULT hr = __super::PreMessageLoop(nShowCmd);
 		if (FAILED(hr))
@@ -57,7 +57,7 @@ public :
 	// TODO: Stop service handler, shutdown listener thread and client threads.
 	// Maybe, probably can handle this completely in PostMessageLoop too.
 
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop() noexcept
 	{
 		// Clean-up code here...
 		m_pListenerClient.Free();
@@ -72,7 +72,7 @@ public :
 		return S_OK;
 	}
 
-	HRESULT InitializeSecurity() throw()
+	HRESULT InitializeSecurity() noexcept
 	{
 		if (m_bService)
 		{

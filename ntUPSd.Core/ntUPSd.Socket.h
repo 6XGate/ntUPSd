@@ -85,8 +85,8 @@ namespace CTL
 
 		SOCKET GetHandle() const noexcept;
 
-		void Attach(_In_ SOCKET s) throw();
-		SOCKET Detach() throw();
+		void Attach(_In_ SOCKET s) noexcept;
+		SOCKET Detach() noexcept;
 
 		HRESULT Create(_In_ const ADDRINFOT *pai) noexcept;
 		HRESULT Bind(_In_ const ADDRINFOT *pai) noexcept;
@@ -100,5 +100,40 @@ namespace CTL
 		HRESULT Select(_In_ HANDLE hEvent, long lEvents) noexcept;
 		HRESULT IOControlSet(long eCommand, ULONG lArg) noexcept;
 		HRESULT IOControlGet(long eCommand, _Inout_ ULONG *plArg) noexcept;
+	};
+
+	class CSocketStream :
+		public ::ATL::CComObjectRootEx<::ATL::CComMultiThreadModel>,
+		public IStream
+	{
+	public:
+		BEGIN_COM_MAP(CSocketStream)
+			COM_INTERFACE_ENTRY(IStream)
+		END_COM_MAP()
+
+		CSocketStream() = default;
+		CSocketStream(CSocketStream &&) = delete;
+		CSocketStream(const CSocketStream &) = delete;
+		CSocketStream &operator =(CSocketStream &&) = delete;
+		CSocketStream &operator =(const CSocketStream &) = delete;
+		~CSocketStream() noexcept = default;
+
+		static HRESULT New(_In_ SOCKET s, _In_opt_ HANDLE hCancelEvent, _COM_Outptr_ IStream **ppstm) noexcept;
+
+		STDMETHOD(Read)(_Out_bytecap_post_bytecount_(cb, *pcbRead) _Pre_defensive_ void *pv, ULONG cb, _Out_opt_ ULONG *pcbRead) noexcept override;
+		STDMETHOD(Write)(_In_bytecount_(cb) _Pre_defensive_ const void *pv, ULONG cb, _Out_opt_ ULONG *pcbWritten) noexcept override;
+		STDMETHOD(Seek)(LARGE_INTEGER dlibMove, DWORD dwOrigin, _Out_opt_ ULARGE_INTEGER *plibNewPosition) noexcept override;
+		STDMETHOD(SetSize)(ULARGE_INTEGER libNewSize) noexcept override;
+		STDMETHOD(CopyTo)(_In_ _Pre_defensive_ IStream *pstm, ULARGE_INTEGER cb, _Out_opt_ ULARGE_INTEGER *pcbRead, _Out_opt_ ULARGE_INTEGER *pcbWritten) noexcept override;
+		STDMETHOD(Commit)(DWORD grfCommitFlags) noexcept override;
+		STDMETHOD(Revert)(void) noexcept override;
+		STDMETHOD(LockRegion)(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) noexcept override;
+		STDMETHOD(UnlockRegion)(ULARGE_INTEGER libOffset, ULARGE_INTEGER cb, DWORD dwLockType) noexcept override;
+		STDMETHOD(Stat)(_Out_ _Pre_defensive_ STATSTG *pstatstg, DWORD grfStatFlag) noexcept override;
+		STDMETHOD(Clone)(_COM_Outptr_ IStream **ppstm) noexcept override;
+
+	private:
+		::ATL::CHandle m_hEventHandles[2];
+		CSocket m_hSocket;
 	};
 }
