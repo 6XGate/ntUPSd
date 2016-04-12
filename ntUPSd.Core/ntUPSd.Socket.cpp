@@ -339,7 +339,7 @@ namespace CTL
 		if (hCancelEvent != NULL)
 		{
 			#pragma warning(suppress: 6387) // Checked after construction.
-			::ATL::CHandle hReadEvent(::CreateEvent(nullptr, TRUE, FALSE, nullptr));
+			::ATL::CHandle hReadEvent(::CreateEvent(nullptr, FALSE, FALSE, nullptr));
 			if (hReadEvent == NULL)
 			{
 				hr = ::ATL::AtlHresultFromLastError();
