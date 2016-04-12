@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "ntUPSd.Core.Base.h"
 
 // Project Module Headers:
+#include "ntUPSd.COM.h"
+#include "ntUPSd.Formatter.h"
 #include "ntUPSd.ReplDriver.h"
 #include "ntUPSd.ServerModule.h"
 #include "ntUPSd.Socket.h"

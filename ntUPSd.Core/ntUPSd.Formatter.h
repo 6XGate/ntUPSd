@@ -61,8 +61,8 @@ namespace CTL
 		static HRESULT ToString(::ATL::CStringA &rstrResult, double nValue) noexcept;
 		static HRESULT ToString(::ATL::CStringA &rstrResult, long double nValue) noexcept;
 
-		static HRESULT ToString(::ATL::CStringA &rstrResult, LPCSTR pszValue) noexcept;
-		static HRESULT ToString(::ATL::CStringA &rstrResult, LPCSTR pszValue, int cchValue) noexcept;
+		static HRESULT ToString(::ATL::CStringA &rstrResult, _In_z_ LPCSTR pszValue) noexcept;
+		static HRESULT ToString(::ATL::CStringA &rstrResult, _In_count_(cchValue) LPCSTR pszValue, int cchValue) noexcept;
 		static HRESULT ToString(::ATL::CStringA &rstrResult, const ::ATL::CStringA &strValue) noexcept;
 	};
 }

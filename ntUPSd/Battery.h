@@ -53,7 +53,7 @@ public:
 
 	HRESULT Open(_In_z_ LPCWSTR pszDevicePath) noexcept;
 
-	HRESULT GetVariable(LPCSTR pszName, CComPtr<IReplResult> &rpResult) noexcept;
+	HRESULT GetVariable(_In_z_ LPCSTR pszName, CComPtr<IReplResult> &rpResult) noexcept;
 
 	HRESULT RenderListUpsEntry(CStringA &strOutput) noexcept;
 
@@ -68,12 +68,12 @@ private:
 
 	CAtlMap<CStringA, CComPtr<CBatteryVariable>> m_rgVariables;
 
-	static HRESULT ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept;
-	static HRESULT GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &strValue) noexcept;
-	HRESULT GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &strValue) noexcept;
+	static HRESULT ToUtf8(_In_z_ LPCWSTR pszValue, CStringA &rstrValue) noexcept;
+	static HRESULT GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept;
+	HRESULT GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept;
 
-	HRESULT GetUpsStatus(CStringA &strValue) noexcept;
-	HRESULT GetBatteryCharge(CStringA &strValue) noexcept;
+	HRESULT GetUpsStatus(CStringA &rstrValue) noexcept;
+	HRESULT GetBatteryCharge(CStringA &rstrValue) noexcept;
 };
 
 class CBatteryStaticVariable final : public CBatteryVariable
@@ -88,7 +88,7 @@ public:
 
 	virtual bool IsReadOnly() const noexcept override;
 
-	STDMETHOD(RenderResult)(CStringA &strResult) noexcept;
+	STDMETHOD(RenderResult)(CStringA &rstrResult) noexcept;
 
 private:
 	const LPCSTR m_pszValue;
@@ -100,7 +100,7 @@ public:
 	typedef HRESULT(CBattery::*PFNVARGETTER)(CStringA &strValue);
 	typedef HRESULT(CBattery::*PFNVARSETTER)(LPCSTR pszNewValue);
 
-	CBatteryDynamicVariable(CBattery &battery, _In_z_ LPCSTR pszUps, _In_z_ LPCSTR pszName, _In_ PFNVARGETTER pfnGetter, _In_ PFNVARSETTER pfnSetter = nullptr) noexcept;
+	CBatteryDynamicVariable(CBattery &battery, _In_z_ LPCSTR pszUps, _In_z_ LPCSTR pszName, _In_ PFNVARGETTER pfnGetter, _In_opt_ PFNVARSETTER pfnSetter = nullptr) noexcept;
 	CBatteryDynamicVariable(CBatteryDynamicVariable &&) = delete;
 	CBatteryDynamicVariable(const CBatteryDynamicVariable &) = delete;
 	CBatteryDynamicVariable &operator =(CBatteryDynamicVariable &&) = delete;
@@ -109,7 +109,7 @@ public:
 
 	virtual bool IsReadOnly() const noexcept override;
 
-	STDMETHOD(RenderResult)(CStringA &strResult) noexcept;
+	STDMETHOD(RenderResult)(CStringA &rstrResult) noexcept;
 
 private:
 	CBattery &m_Battery;
@@ -130,9 +130,9 @@ public:
 	~CBatteryCollection() noexcept = default;
 
 	HRESULT LoadBatteries() noexcept;
-	POSITION FindBattery(LPCSTR pszName) const noexcept;
+	POSITION FindBattery(_In_z_ LPCSTR pszName) const noexcept;
 
-	STDMETHOD(RenderResult)(CStringA &strResult) noexcept;
+	STDMETHOD(RenderResult)(CStringA &rstrResult) noexcept;
 
 private:
 	using MyBase::AddHead;

@@ -32,7 +32,7 @@ namespace CTL
 		IReplResult &operator =(const IReplResult &) = delete;
 		virtual ~IReplResult() noexcept = default;
 
-		STDMETHOD(RenderResult)(::ATL::CStringA &strResult) noexcept PURE;
+		STDMETHOD(RenderResult)(::ATL::CStringA &rstrResult) noexcept PURE;
 
 	protected:
 		IReplResult() noexcept = default;
@@ -65,7 +65,7 @@ namespace CTL
 		CReplDriverBase(const CReplDriverBase &) = delete;
 		CReplDriverBase &operator =(CReplDriverBase &&) = delete;
 		CReplDriverBase &operator =(const CReplDriverBase &) = delete;
-		~CReplDriverBase() noexcept;
+		~CReplDriverBase() noexcept = default;
 
 	protected:
 		static const HRESULT E_DISCONNECTED = MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, WSAENOTCONN);
@@ -73,14 +73,14 @@ namespace CTL
 
 		::ATL::CComPtr<IReplResult> m_pLastResult;
 		::ATL::CHeapPtr<CHAR> m_pszBuffer;
-		::ATL::CAtlFile m_hInput;
-		::ATL::CAtlFile m_hOutput;
+		::ATL::CComPtr<IStream> m_pInput;
+		::ATL::CComPtr<IStream> m_pOutput;
 
 		CReplDriverBase() noexcept = default;
 
 		LPSTR GetLine() noexcept;
 
-		HRESULT Initialize(_In_ HANDLE hInput, _In_ HANDLE hOutput) noexcept;
+		HRESULT Initialize(_In_ IStream *pInput, _In_ IStream *pOutput) noexcept;
 		HRESULT ReadLine() noexcept;
 		HRESULT WriteResult(_In_z_ LPCSTR pszResult) noexcept;
 	};
@@ -97,7 +97,7 @@ namespace CTL
 		CReplDriver &operator =(CReplDriver &&) = delete;
 		CReplDriver &operator =(const CReplDriver &) = delete;
 
-		HRESULT Initialize(_In_ HANDLE hInput, _In_ HANDLE hOutput) noexcept;
+		HRESULT Initialize(_In_ IStream *pInput, _In_ IStream *pOutput) noexcept;
 		HRESULT BeginProcessing() noexcept;
 
 	private:

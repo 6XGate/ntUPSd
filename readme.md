@@ -35,8 +35,7 @@ standard Windows programing interfaces for easier setup.
 
 In no particular priority.
 
-- Add the SAL annotations to definitions so static code analysis may be used.
-- Provides quicker service shutdown.
+- WIP: Provides quicker service shutdown.
 - Implement complete protocol.
 - Create administration user interface.
 - Add support for mulitple batteries.
