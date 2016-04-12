@@ -19,7 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "stdafx.h"
 #include "Battery.h"
 
-CBatteryVariable::CBatteryVariable(LPCSTR pszUps, LPCSTR pszName) noexcept :
+CBatteryVariable::CBatteryVariable(_In_z_ LPCSTR pszUps, _In_z_ LPCSTR pszName) noexcept :
 	m_pszUps(pszUps), m_pszName(pszName)
 {
 }
@@ -33,7 +33,7 @@ const CStringA & CBattery::GetKeyName() const noexcept
 	return m_strKeyName;
 }
 
-HRESULT CBattery::Open(LPCWSTR pszDevicePath) noexcept
+HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 {
 	_ATLTRY
 	{
@@ -119,7 +119,7 @@ HRESULT CBattery::Open(LPCWSTR pszDevicePath) noexcept
 	}
 }
 
-HRESULT CBattery::GetVariable(LPCSTR pszName, CComPtr<IReplResult>& rpResult) noexcept
+HRESULT CBattery::GetVariable(_In_z_ LPCSTR pszName, CComPtr<IReplResult>& rpResult) noexcept
 {
 	POSITION pos = m_rgVariables.Lookup(pszName);
 	if (pos != nullptr)
@@ -147,14 +147,14 @@ HRESULT CBattery::RenderListUpsEntry(CStringA &strOutput) noexcept
 	}
 }
 
-HRESULT CBattery::ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept
+HRESULT CBattery::ToUtf8(_In_z_ LPCWSTR pszValue, CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
 		DWORD cchValue = static_cast<DWORD>(wcslen(pszValue)), cchRequired = 0;
 		if (cchValue == 0)
 		{
-			strValue.Empty();
+			rstrValue.Empty();
 			return S_OK;
 		}
 
@@ -164,14 +164,14 @@ HRESULT CBattery::ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept
 			return AtlHresultFromLastError();
 		}
 
-		LPSTR pszResult = strValue.GetBufferSetLength(++cchRequired);
+		LPSTR pszResult = rstrValue.GetBufferSetLength(++cchRequired);
 		cchRequired = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, pszValue, cchValue, pszResult, cchRequired, nullptr, nullptr);
 		if (cchRequired == 0)
 		{
 			return AtlHresultFromLastError();
 		}
 
-		strValue.ReleaseBuffer();
+		rstrValue.ReleaseBuffer();
 		return S_OK;
 	}
 	_ATLCATCH(ex)
@@ -184,7 +184,7 @@ HRESULT CBattery::ToUtf8(LPCWSTR pszValue, CStringA &strValue) noexcept
 	}
 }
 
-HRESULT CBattery::GetStringInfo(HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &strValue) noexcept
+HRESULT CBattery::GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
 {
 	DWORD cchBuffer = 128;
 	CAtlArray<WCHAR> pszBuffer;
@@ -208,15 +208,15 @@ HRESULT CBattery::GetStringInfo(HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUER
 		break;
 	}
 
-	return ToUtf8(pszBuffer.GetData(), strValue);
+	return ToUtf8(pszBuffer.GetData(), rstrValue);
 }
 
-HRESULT CBattery::GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA & strValue) noexcept
+HRESULT CBattery::GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
 {
-	return GetStringInfo(m_hBattery, m_nBatteryTag, eInfoLevel, strValue);
+	return GetStringInfo(m_hBattery, m_nBatteryTag, eInfoLevel, rstrValue);
 }
 
-HRESULT CBattery::GetUpsStatus(CStringA & strValue) noexcept
+HRESULT CBattery::GetUpsStatus(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
@@ -236,30 +236,30 @@ HRESULT CBattery::GetUpsStatus(CStringA & strValue) noexcept
 		// TODO: Add to _battery.charger.status_.
 		//if (bs.PowerState & BATTERY_CHARGING)
 		//{
-		//	strValue.Append("CHRG ");
+		//	rstrValue.Append("CHRG ");
 		//}
 
 		if (bs.PowerState & BATTERY_POWER_ON_LINE)
 		{
-			strValue.Append("OL ");
+			rstrValue.Append("OL ");
 		}
 
 		if (bs.PowerState & BATTERY_DISCHARGING)
 		{
-			strValue.Append("OB ");
+			rstrValue.Append("OB ");
 		}
 
 		if (bs.Capacity <= m_BatteryInfo.DefaultAlert2)
 		{
-			strValue.Append("LB ");
+			rstrValue.Append("LB ");
 		}
 
 		if (bs.PowerState & BATTERY_CRITICAL)
 		{
-			strValue.Append("FSD ");
+			rstrValue.Append("FSD ");
 		}
 
-		strValue.Trim();
+		rstrValue.Trim();
 		return S_OK;
 	}
 	_ATLCATCH(ex)
@@ -272,7 +272,7 @@ HRESULT CBattery::GetUpsStatus(CStringA & strValue) noexcept
 	}
 }
 
-HRESULT CBattery::GetBatteryCharge(CStringA &strValue) noexcept
+HRESULT CBattery::GetBatteryCharge(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
@@ -290,7 +290,7 @@ HRESULT CBattery::GetBatteryCharge(CStringA &strValue) noexcept
 		}
 
 		ULONGLONG nRemainingCapacity = bs.Capacity * 100 / m_BatteryInfo.FullChargedCapacity;
-		strValue.AppendFormat("%I64u", nRemainingCapacity);
+		rstrValue.AppendFormat("%I64u", nRemainingCapacity);
 		return S_OK;
 	}
 	_ATLCATCH(ex)
@@ -303,7 +303,7 @@ HRESULT CBattery::GetBatteryCharge(CStringA &strValue) noexcept
 	}
 }
 
-CBatteryStaticVariable::CBatteryStaticVariable(LPCSTR pszUps, LPCSTR pszName, LPCSTR pszValue) noexcept :
+CBatteryStaticVariable::CBatteryStaticVariable(_In_z_ LPCSTR pszUps, _In_z_ LPCSTR pszName, _In_z_ LPCSTR pszValue) noexcept :
 	CBatteryVariable(pszUps, pszName), m_pszValue(pszValue)
 {
 }
@@ -313,11 +313,11 @@ bool CBatteryStaticVariable::IsReadOnly() const noexcept
 	return true;
 }
 
-STDMETHODIMP CBatteryStaticVariable::RenderResult(CStringA & strResult) noexcept
+STDMETHODIMP CBatteryStaticVariable::RenderResult(CStringA &rstrResult) noexcept
 {
 	_ATLTRY
 	{
-		return Format::Text(strResult, "VAR %$ %$ %$\r\n", m_pszUps, m_pszName, m_pszValue);
+		return Format::Text(rstrResult, "VAR %$ %$ %$\r\n", m_pszUps, m_pszName, m_pszValue);
 	}
 	_ATLCATCH(ex)
 	{
@@ -329,7 +329,7 @@ STDMETHODIMP CBatteryStaticVariable::RenderResult(CStringA & strResult) noexcept
 	}
 }
 
-CBatteryDynamicVariable::CBatteryDynamicVariable(CBattery &battery, LPCSTR pszUps, LPCSTR pszName, PFNVARGETTER pfnGetter, PFNVARSETTER pfnSetter) noexcept :
+CBatteryDynamicVariable::CBatteryDynamicVariable(CBattery &battery, _In_z_ LPCSTR pszUps, _In_z_ LPCSTR pszName, _In_ PFNVARGETTER pfnGetter, _In_opt_ PFNVARSETTER pfnSetter) noexcept :
 	CBatteryVariable(pszUps, pszName), m_Battery(battery), m_pfnGetter(pfnGetter), m_pfnSetter(pfnSetter)
 {
 }
@@ -339,7 +339,7 @@ bool CBatteryDynamicVariable::IsReadOnly() const noexcept
 	return m_pfnSetter != nullptr;
 }
 
-STDMETHODIMP CBatteryDynamicVariable::RenderResult(CStringA &strResult) noexcept
+STDMETHODIMP CBatteryDynamicVariable::RenderResult(CStringA &rstrResult) noexcept
 {
 	_ATLTRY
 	{
@@ -350,7 +350,7 @@ STDMETHODIMP CBatteryDynamicVariable::RenderResult(CStringA &strResult) noexcept
 			return hr;
 		}
 
-		return Format::Text(strResult, "VAR %$ %$ %$\r\n", m_pszUps, m_pszName, strValue);
+		return Format::Text(rstrResult, "VAR %$ %$ %$\r\n", m_pszUps, m_pszName, strValue);
 	}
 	_ATLCATCH(ex)
 	{
@@ -427,7 +427,7 @@ HRESULT CBatteryCollection::LoadBatteries() noexcept
 	return IsEmpty() ? NTUPSD_E_NO_UPS : S_OK;
 }
 
-POSITION CBatteryCollection::FindBattery(LPCSTR pszName) const noexcept
+POSITION CBatteryCollection::FindBattery(_In_z_ LPCSTR pszName) const noexcept
 {
 	POSITION pos = GetHeadPosition();
 	while (pos != NULL)
@@ -444,24 +444,24 @@ POSITION CBatteryCollection::FindBattery(LPCSTR pszName) const noexcept
 	return nullptr;
 }
 
-STDMETHODIMP CBatteryCollection::RenderResult(CStringA &strResult) noexcept
+STDMETHODIMP CBatteryCollection::RenderResult(CStringA &rstrResult) noexcept
 {
 	_ATLTRY
 	{
-		strResult.Append("BEGIN LIST UPS\r\n");
+		rstrResult.Append("BEGIN LIST UPS\r\n");
 
 		POSITION pos = GetHeadPosition();
 		while (pos != NULL)
 		{
 			CBattery &battery = GetNext(pos);
-			HRESULT hr = battery.RenderListUpsEntry(strResult);
+			HRESULT hr = battery.RenderListUpsEntry(rstrResult);
 			if (FAILED(hr))
 			{
 				return hr;
 			}
 		}
 
-		strResult.Append("END LIST UPS\r\n");
+		rstrResult.Append("END LIST UPS\r\n");
 		return S_OK;
 	}
 	_ATLCATCH(ex)

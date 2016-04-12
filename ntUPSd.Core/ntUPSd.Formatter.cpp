@@ -57,7 +57,7 @@ namespace CTL
 		}
 	}
 
-	LPCSTR Format::FindOneOf(LPCSTR pszSubject, LPCSTR pszCharacters) noexcept
+	LPCSTR Format::FindOneOf(_In_z_ LPCSTR pszSubject, _In_z_ LPCSTR pszCharacters) noexcept
 	{
 		for (LPCCH pchPos = pszSubject; *pchPos != 0; ++pchPos)
 		{
@@ -73,12 +73,12 @@ namespace CTL
 		return nullptr;
 	}
 
-	HRESULT Format::ToString(::ATL::CStringA &rstrResult, LPCSTR pszValue) noexcept
+	HRESULT Format::ToString(::ATL::CStringA &rstrResult, _In_z_ LPCSTR pszValue) noexcept
 	{
 		return ToString(rstrResult, pszValue, static_cast<int>(strlen(pszValue)));
 	}
 
-	HRESULT Format::ToString(::ATL::CStringA &rstrResult, LPCSTR pszValue, int cchValue) noexcept
+	HRESULT Format::ToString(::ATL::CStringA &rstrResult, _In_count_(cchValue) LPCSTR pszValue, int cchValue) noexcept
 	{
 		_ATLTRY
 		{

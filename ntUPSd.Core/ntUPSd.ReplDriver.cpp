@@ -37,7 +37,7 @@ namespace CTL
 		return cRefs;
 	}
 
-	STDMETHODIMP CReplResult::QueryInterface(REFIID riid, void **ppvObject) noexcept
+	STDMETHODIMP CReplResult::QueryInterface(_In_ REFIID riid, _COM_Outptr_ void **ppvObject) noexcept
 	{
 		if (ppvObject == nullptr)
 		{
@@ -61,13 +61,6 @@ namespace CTL
 		}
 
 		return hr;
-	}
-
-	CReplDriverBase::~CReplDriverBase() noexcept
-	{
-		// We don't own these handles, just using CAtlFile them as a wrapper.
-		m_hInput.Detach();
-		m_hOutput.Detach();
 	}
 
 	LPSTR CReplDriverBase::GetLine() noexcept
@@ -103,15 +96,15 @@ namespace CTL
 		return pchStart;
 	}
 
-	HRESULT CReplDriverBase::Initialize(HANDLE hInput, HANDLE hOutput) noexcept
+	HRESULT CReplDriverBase::Initialize(_In_ IStream *pInput, _In_ IStream *pOutput) noexcept
 	{
 		if (!m_pszBuffer.Allocate(BUFFER_SIZE))
 		{
 			return E_OUTOFMEMORY;
 		}
 
-		m_hInput.Attach(hInput);
-		m_hOutput.Attach(hOutput);
+		m_pInput = pInput;
+		m_pOutput = pOutput;
 		return S_OK;
 	}
 
@@ -127,8 +120,8 @@ namespace CTL
 		while (cchUsed < BUFFER_SIZE)
 		{
 			// Read the next character.
-			DWORD fReceived = FALSE;
-			hr = m_hInput.Read(pchPos, 1, fReceived);
+			ULONG fReceived = FALSE;
+			hr = m_pInput->Read(pchPos, 1, &fReceived);
 			if (hr == __HRESULT_FROM_WIN32(ERROR_NETNAME_DELETED))
 			{
 				// File API way of telling us the client has disconnected, so return that error.
@@ -170,31 +163,31 @@ namespace CTL
 		return E_NOT_SUFFICIENT_BUFFER;
 	}
 
-	HRESULT CReplDriverBase::WriteResult(LPCSTR pszLine) noexcept
+	HRESULT CReplDriverBase::WriteResult(_In_z_ LPCSTR pszResult) noexcept
 	{
 		// Don't echo empty lines.
-		DWORD cchLine = static_cast<DWORD>(strlen(pszLine));
+		DWORD cchLine = static_cast<DWORD>(strlen(pszResult));
 		if (cchLine == 0)
 		{
 			return S_OK;
 		}
 
 		HRESULT hr;
-		if (!(pszLine[cchLine - 1] == '\r' || pszLine[cchLine - 1] == '\n'))
+		if (!(pszResult[cchLine - 1] == '\r' || pszResult[cchLine - 1] == '\n'))
 		{
 			// The line is missing its ending, so provide one.
-			ATLTRACE("WR: %s\n", pszLine);
-			hr = m_hOutput.Write(pszLine, cchLine);
+			ATLTRACE("WR: %s\n", pszResult);
+			hr = m_pOutput->Write(pszResult, cchLine, nullptr);
 			if (SUCCEEDED(hr))
 			{
-				hr = m_hInput.Write("\r\n", 2);
+				hr = m_pOutput->Write("\r\n", 2, nullptr);
 			}
 		}
 		else
 		{
 			// The line has its ending, so don't add one.
-			ATLTRACE("WR: %s", pszLine);
-			hr = m_hOutput.Write(pszLine, cchLine);
+			ATLTRACE("WR: %s", pszResult);
+			hr = m_pOutput->Write(pszResult, cchLine, nullptr);
 		}
 
 		return hr;
