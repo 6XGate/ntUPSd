@@ -244,7 +244,7 @@ LPCSTR CCommandProcessor::GetPart(_Inout_z_ LPSTR &pszLine) noexcept
 	return pszResult;
 }
 
-HRESULT CCommandProcessor::OnStartTls(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
+HRESULT CCommandProcessor::OnStartTls(_In_z_ LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
 	UNREFERENCED_PARAMETER(pszParameters);
 	UNREFERENCED_PARAMETER(rpResult);
@@ -253,7 +253,7 @@ HRESULT CCommandProcessor::OnStartTls(LPSTR pszParameters, CComPtr<IReplResult>&
 	return NUT_E_NOTSUPPORTED;
 }
 
-HRESULT CCommandProcessor::OnUserName(LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
+HRESULT CCommandProcessor::OnUserName(_In_z_ LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
 	UNREFERENCED_PARAMETER(rpResult);
 
@@ -283,14 +283,14 @@ HRESULT CCommandProcessor::OnUserName(LPSTR pszParameters, CComPtr<IReplResult> 
 	}
 }
 
-HRESULT CCommandProcessor::OnPassWord(LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
+HRESULT CCommandProcessor::OnPassWord(_In_z_ LPSTR pszParameters, CComPtr<IReplResult> &rpResult) noexcept
 {
 	UNREFERENCED_PARAMETER(rpResult);
 
 	_ATLTRY
 	{
 		LPCSTR pszPassWord = GetPart(pszParameters);
-		if (pszPassWord == nullptr && strlen(pszPassWord) == 0)
+		if (pszPassWord == nullptr || strlen(pszPassWord) == 0)
 		{
 			return NUT_E_INVALIDARG;
 		}
@@ -313,7 +313,7 @@ HRESULT CCommandProcessor::OnPassWord(LPSTR pszParameters, CComPtr<IReplResult> 
 	}
 }
 
-HRESULT CCommandProcessor::OnGet(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
+HRESULT CCommandProcessor::OnGet(_In_z_ LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
 	HRESULT hr = S_OK;
 
@@ -373,7 +373,7 @@ HRESULT CCommandProcessor::OnLogin(_In_z_ LPSTR pszParameters, CComPtr<IReplResu
 	return S_OK;
 }
 
-HRESULT CCommandProcessor::OnLogout(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
+HRESULT CCommandProcessor::OnLogout(_In_z_ LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
 	UNREFERENCED_PARAMETER(pszParameters);
 
@@ -386,7 +386,7 @@ HRESULT CCommandProcessor::OnLogout(LPSTR pszParameters, CComPtr<IReplResult>& r
 	return S_OK;
 }
 
-HRESULT CCommandProcessor::OnGetVar(LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
+HRESULT CCommandProcessor::OnGetVar(_In_z_ LPSTR pszParameters, CComPtr<IReplResult>& rpResult) noexcept
 {
 	HRESULT hr = S_OK;
 	LPCSTR pszUps = GetPart(pszParameters);

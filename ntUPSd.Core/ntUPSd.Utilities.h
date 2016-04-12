@@ -24,6 +24,7 @@ namespace CTL
 	template <class T, typename... Args>
 	ATL_FORCEINLINE T *_AtlNew(Args && ...args)
 	{
+		#pragma warning(suppress: 6387) // Unable to annotate or handle analyzing?
 		T *p = _ATL_NEW T(std::forward<Args>(args)...);
 		if (p == nullptr)
 		{

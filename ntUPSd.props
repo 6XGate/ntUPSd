@@ -10,12 +10,12 @@
     <OutDir>$(MSBuildThisFileDirectory)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
     <IntDir>$(MSBuildThisFileDirectory)obj\$(PlatformShortName)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <ExceptionHandling>Async</ExceptionHandling>
-      <EnablePREfast>false</EnablePREfast>
+      <EnablePREfast>true</EnablePREfast>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <SDLCheck>true</SDLCheck>

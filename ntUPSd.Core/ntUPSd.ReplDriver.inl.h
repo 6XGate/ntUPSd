@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 namespace CTL
 {
 	template <typename Processor>
-	inline HRESULT CReplDriver<Processor>::Initialize(HANDLE hInput, HANDLE hOutput) noexcept
+	inline HRESULT CReplDriver<Processor>::Initialize(_In_ IStream *pInput, _In_ IStream *pOutput) noexcept
 	{
-		HRESULT hr = __super::Initialize(hInput, hOutput);
+		HRESULT hr = __super::Initialize(pInput, pOutput);
 		if (FAILED(hr))
 		{
 			return hr;

@@ -24,12 +24,19 @@ class CNetworkUpsDaemonModule : public CServerModuleT<CNetworkUpsDaemonModule, I
 public :
 	DECLARE_REGISTRY_APPID_RESOURCEID(INFINITE, "{153BA2A2-89A0-425C-81E4-70A5FBA48498}")
 
-	HRESULT PreMessageLoop(_In_ int nShowCmd) throw()
+	HRESULT PreMessageLoop(_In_ int nShowCmd) noexcept
 	{
 		HRESULT hr = __super::PreMessageLoop(nShowCmd);
 		if (FAILED(hr))
 		{
 			return hr;
+		}
+
+		#pragma warning(suppress: 6387) // It is checked after construction.
+		CHandle hStopEvent(::CreateEvent(nullptr, TRUE, FALSE, nullptr));
+		if (hStopEvent == NULL)
+		{
+			return hr = ::AtlHresultFromLastError();
 		}
 
 		hr = m_ws.Startup(MAKEWORD(2, 2));
@@ -44,12 +51,13 @@ public :
 			return hr = E_OUTOFMEMORY;
 		}
 
-		hr = m_pListenerClient->Initialize();
+		hr = m_pListenerClient->Initialize(hStopEvent);
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
+		m_hStopEvent.Attach(hStopEvent.Detach());
 		SetServiceStatus(SERVICE_RUNNING);
 		return S_OK;
 	}
@@ -57,7 +65,7 @@ public :
 	// TODO: Stop service handler, shutdown listener thread and client threads.
 	// Maybe, probably can handle this completely in PostMessageLoop too.
 
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop() noexcept
 	{
 		// Clean-up code here...
 		m_pListenerClient.Free();
@@ -72,7 +80,13 @@ public :
 		return S_OK;
 	}
 
-	HRESULT InitializeSecurity() throw()
+	void OnStop() throw()
+	{
+		::SetEvent(m_hStopEvent);
+		__super::OnStop();
+	}
+
+	HRESULT InitializeSecurity() noexcept
 	{
 		if (m_bService)
 		{
@@ -87,6 +101,7 @@ public :
 
 private:
 	CAutoPtr<CServerWorker> m_pListenerClient;
+	CHandle m_hStopEvent;
 	CWinSock m_ws;
 };
 
@@ -112,7 +127,7 @@ using CLocalPtr = ::ATL::CHeapPtr<T, CLocalAllocator>;
 EXTERN_C INT WINAPI _tWinMain(
 	_In_ HINSTANCE /*hInstance*/,
 	_In_opt_ HINSTANCE /*hPrevInstance*/,
-	_In_z_ LPTSTR /*lpCmdLine*/,
+	_In_ LPTSTR /*lpCmdLine*/,
 	_In_ INT nShowCmd)
 {
 	return _AtlModule.WinMain(nShowCmd);

@@ -29,7 +29,7 @@ public:
 	CServerWorker &operator =(const CServerWorker &) = delete;
 	~CServerWorker() noexcept = default;
 
-	HRESULT Initialize() noexcept;
+	HRESULT Initialize(_In_ HANDLE hStopEvent) noexcept;
 };
 
 class CClient final
@@ -59,7 +59,7 @@ public:
 	CServer &operator =(const CServer &) = delete;
 	~CServer() noexcept = default;
 
-	HRESULT Initialize(_In_ HANDLE hAcceptEvent) noexcept;
+	HRESULT Initialize(_In_ HANDLE hStopEvent, _In_ HANDLE hAcceptEvent) noexcept;
 
 	HRESULT OnConnect() noexcept;
 
@@ -67,6 +67,7 @@ private:
 	CThreadPool<CClient> m_ThreadPool;
 	CAddressInfo m_ai;
 	CSocket m_hServer;
+	HANDLE m_hStopEvent;
 };
 
 class CServerOnConnectProxy : public CAbstractProxy<CServer>

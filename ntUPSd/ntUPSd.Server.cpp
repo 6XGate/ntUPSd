@@ -19,7 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "stdafx.h"
 #include "ntUPSd.Server.h"
 
-HRESULT CServerWorker::Initialize() noexcept
+HRESULT CServerWorker::Initialize(_In_ HANDLE hStopEvent) noexcept
 {
 	HRESULT hr = __super::Initialize();
 	if (FAILED(hr))
@@ -27,6 +27,7 @@ HRESULT CServerWorker::Initialize() noexcept
 		return hr;
 	}
 
+	#pragma warning(suppress: 6387) // Checked on the next line.
 	CHandle hAcceptEvent(::CreateEvent(nullptr, FALSE, FALSE, nullptr));
 	if (hAcceptEvent == NULL)
 	{
@@ -39,7 +40,7 @@ HRESULT CServerWorker::Initialize() noexcept
 		return hr = E_OUTOFMEMORY;
 	}
 
-	hr = pServer->Initialize(hAcceptEvent);
+	hr = pServer->Initialize(hStopEvent, hAcceptEvent);
 	if (FAILED(hr))
 	{
 		return hr;
@@ -69,21 +70,27 @@ HRESULT CServerWorker::Initialize() noexcept
 	return S_OK;
 }
 
-BOOL CClient::Initialize(void *pvParam) noexcept
+BOOL CClient::Initialize(_In_opt_ void *pvParam) noexcept
 {
 	UNREFERENCED_PARAMETER(pvParam);
 
 	return TRUE;
 }
 
-void CClient::Execute(RequestType request, void *pWorkerParam, OVERLAPPED *pOverlapped) noexcept
+void CClient::Execute(_In_ RequestType request, _In_opt_ void *pWorkerParam, _In_opt_ OVERLAPPED *pOverlapped) noexcept
 {
 	UNREFERENCED_PARAMETER(pWorkerParam);
 	UNREFERENCED_PARAMETER(pOverlapped);
 
-	CSocket hClient(request);
+	CComPtr<IStream> pSocket;
+	HRESULT hr = CSocketStream::New(request, reinterpret_cast<HANDLE>(pWorkerParam), &pSocket);
+	if (FAILED(hr))
+	{
+		return;
+	}
+
 	CReplDriver<CCommandProcessor> repl;
-	HRESULT hr = repl.Initialize(hClient, hClient);
+	hr = repl.Initialize(pSocket, pSocket);
 	if (SUCCEEDED(hr))
 	{
 		hr = repl.BeginProcessing();
@@ -97,25 +104,29 @@ void CClient::Execute(RequestType request, void *pWorkerParam, OVERLAPPED *pOver
 		ATLTRACE(_T("Client thread: REPL driver initialization failured; %08Xh\n"), hr);
 	}
 
-	hr = hClient.Shutdown();
-	if (FAILED(hr) && hr != __HRESULT_FROM_WIN32(WSAECONNRESET))
+	if (shutdown(request, SD_BOTH) == SOCKET_ERROR)
 	{
-		ATLTRACE(_T("Client thread: Socket shutdown failed; %08Xh\n"), hr);
+		if (CWinSock::GetLastError() != __HRESULT_FROM_WIN32(WSAECONNRESET))
+		{
+			ATLTRACE(_T("Client thread: Socket shutdown failed; %08Xh\n"), hr);
+		}
 	}
 }
 
-void CClient::Terminate(void *pvParam) noexcept
+void CClient::Terminate(_In_ void *pvParam) noexcept
 {
 	UNREFERENCED_PARAMETER(pvParam);
 }
 
-HRESULT CServer::Initialize(HANDLE hAcceptEvent) noexcept
+HRESULT CServer::Initialize(_In_ HANDLE hStopEvent, _In_ HANDLE hAcceptEvent) noexcept
 {
-	HRESULT hr = m_ThreadPool.Initialize();
+	HRESULT hr = m_ThreadPool.Initialize(reinterpret_cast<void*>(hStopEvent));
 	if (FAILED(hr))
 	{
 		return hr;
 	}
+
+	m_hStopEvent = hStopEvent;
 
 	ADDRINFOT aiHints = {};
 	aiHints.ai_family = AF_INET;
@@ -167,7 +178,7 @@ HRESULT CServer::OnConnect() noexcept
 			return hr;
 		}
 
-		hr = hClient.Select(nullptr, 0);
+		hr = hClient.Deselect();
 		if (FAILED(hr))
 		{
 			return hr;

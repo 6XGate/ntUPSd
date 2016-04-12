@@ -1,6 +1,7 @@
 # Visual Studio Caches:
 *.*sdf
 *.opendb
+*.VC.db
 
 # Build Files:
 /[Bb]in
