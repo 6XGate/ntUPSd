@@ -63,6 +63,7 @@ private:
 	CStringA m_strKeyName;
 	CStringA m_strDeviceName;
 	CStringA m_strManufacturerName;
+	CStringA m_strManufacturerDate;
 	CStringA m_strSerialNumber;
 	BATTERY_INFORMATION m_BatteryInfo;
 

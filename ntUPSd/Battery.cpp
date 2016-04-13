@@ -67,16 +67,19 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 			return AtlHresultFromLastError();
 		}
 
+// To help with debugging, debug builds will list laptop batteries as a UPS.
+#if defined(NDEBUG)
 		// Make sure the battery is a UPS.
 		if (!(m_BatteryInfo.Capabilities & BATTERY_IS_SHORT_TERM))
 		{
 			return NTUPSD_E_NOT_UPS;
 		}
+#endif
 
 		// Now that we have a tag, next get some static information.
-		CStringA strDeviceName, strManufacturerName, strSerialNumber;
+		CStringA strDeviceName, strManufacturerName, strSerialNumber, strManufatureDate;
 
-		// First the battery name.
+		// The battery name.
 		hr = GetStringInfo(hBattery, bqi.BatteryTag, BatteryDeviceName, strDeviceName);
 		if (FAILED(hr))
 		{
@@ -90,21 +93,46 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 			return hr;
 		}
 
-		// Finally, the serial number.
+		// The serial number.
 		hr = GetStringInfo(hBattery, bqi.BatteryTag, BatterySerialNumber, strSerialNumber);
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
-		m_rgVariables.SetAt("driver.name", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.name", "usbhid-ups"));
-		m_rgVariables.SetAt("battery.charge", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.charge", &CBattery::GetBatteryCharge));
+		// The manufagure date.
+		BATTERY_MANUFACTURE_DATE bmd = { 0 };
+		bqi.InformationLevel = BatteryManufactureDate;
+		if (DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &bmd, sizeof(bmd), &cbOut, nullptr))
+		{
+			strManufatureDate.Format("%04hu/%02hu/%02hu", bmd.Year, static_cast<USHORT>(bmd.Month), static_cast<USHORT>(bmd.Day));
+		}
+
+		m_rgVariables.SetAt("device.model", _AtlNew<CBatteryStaticVariable>("usbhid", "device.model", strDeviceName));
+		m_rgVariables.SetAt("device.mfr", _AtlNew<CBatteryStaticVariable>("usbhid", "device.mfr", strManufacturerName));
+		m_rgVariables.SetAt("device.serial", _AtlNew<CBatteryStaticVariable>("usbhid", "device.serial", strSerialNumber));
+		m_rgVariables.SetAt("device.type", _AtlNew<CBatteryStaticVariable>("usbhid", "device.type", "ups"));
+
 		m_rgVariables.SetAt("ups.status", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "ups.status", &CBattery::GetUpsStatus));
+		m_rgVariables.SetAt("ups.model", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.model", strDeviceName));
+		m_rgVariables.SetAt("ups.mfr", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.mfr", strManufacturerName));
+		m_rgVariables.SetAt("ups.serial", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.serial", strSerialNumber));
+
+		m_rgVariables.SetAt("driver.name", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.name", "usbhid-ups"));
+
+		m_rgVariables.SetAt("battery.charge", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.charge", &CBattery::GetBatteryCharge));
+
+		// Optional; the manufacture date.
+		if (!strManufatureDate.IsEmpty())
+		{
+			m_rgVariables.SetAt("ups.mfr.date", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.mfr.date", strManufatureDate));
+		}
 
 		m_nBatteryTag = bqi.BatteryTag;
 		m_strKeyName = "usbhid"; // Just going to use this key name for now.
 		m_strDeviceName = strDeviceName;
 		m_strManufacturerName = strManufacturerName;
+		m_strManufacturerDate = strManufatureDate;
 		m_strSerialNumber = strSerialNumber;
 		m_hBattery.Attach(hBattery.Detach());
 		return S_OK;
