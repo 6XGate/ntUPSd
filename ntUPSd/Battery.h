@@ -60,6 +60,7 @@ public:
 private:
 	CAtlFile m_hBattery;
 	ULONG m_nBatteryTag = 0;
+	CHAR m_szType[5];
 	CStringA m_strKeyName;
 	CStringA m_strDeviceName;
 	CStringA m_strManufacturerName;
@@ -75,6 +76,9 @@ private:
 
 	HRESULT GetUpsStatus(CStringA &rstrValue) noexcept;
 	HRESULT GetBatteryCharge(CStringA &rstrValue) noexcept;
+	HRESULT GetBatteryChargerStatus(CStringA &rstrValue) noexcept;
+	HRESULT GetBatteryTemperature(CStringA &rstrValue) noexcept;
+	HRESULT GetBatteryVoltage(CStringA &rstrValue) noexcept;
 };
 
 class CBatteryStaticVariable final : public CBatteryVariable

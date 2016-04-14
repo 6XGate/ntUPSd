@@ -119,9 +119,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="readme.md" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="ntUPSd.COM.h" />
     <ClInclude Include="ntUPSd.COM.inl.h" />
     <ClInclude Include="ntUPSd.Formatter.h" />

@@ -224,9 +224,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.md" />
-  </ItemGroup>
-  <ItemGroup>
     <CompileMessages Include="LoggedEvents.mc" />
   </ItemGroup>
   <ItemGroup>

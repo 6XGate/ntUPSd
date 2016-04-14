@@ -65,19 +65,21 @@ namespace CTL
 						CStringA strResult;
 						if (m_pLastResult != nullptr)
 						{
-							hr = m_pLastResult->RenderResult(strResult);
+							// The results rendering may trigger other evalutation errors.
+							hrEval = m_pLastResult->RenderResult(strResult);
 						}
 						else
 						{
-							hr = m_Processor.DefaultResult(strResult);
+							hrEval = m_Processor.DefaultResult(strResult);
 						}
 
-						if (SUCCEEDED(hr))
+						if (SUCCEEDED(hrEval))
 						{
 							hr = WriteResult(strResult);
 						}
 					}
-					else
+
+					if (FAILED(hrEval))
 					{
 						LPCSTR pszError = m_Processor.ReportError(hrEval, pszLine);
 						hr = WriteResult(pszError);

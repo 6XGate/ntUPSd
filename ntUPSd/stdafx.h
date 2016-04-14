@@ -27,6 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <StrSafe.h>
 
 // Local:
+#include "ServerVersion.h"
 #include "resource.h"
 #include "LoggedEvents.h"
 

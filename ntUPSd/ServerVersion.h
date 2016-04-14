@@ -28,3 +28,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #define COMPANY_NAME "Matthew Holder"
 #define COPYRIGHT "Copyright 2016 " COMPANY_NAME ". All rights reserved."
+
+#define PROJECT_HOMEPAGE "https://github.com/6XGate/ntUPSd"
+#define PROJECT_REPOURL "https://github.com/6XGate/ntUPSd.git"
+
+#define SERVER_INFO "Network UPS Tools Daemon for Windows ntUPSd v" DAEMON_VERSION " - " PROJECT_HOMEPAGE

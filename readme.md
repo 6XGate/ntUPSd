@@ -31,11 +31,22 @@ standard Windows programing interfaces for easier setup.
     3. Then open a Visual Studio 2015 Command Prompt such as _Developer Command Prompt for VS2015_
        and run `devenv /setup`.
 
+## Components
+
+### ntUPSd: Network UPS Tools Daemon for Windows
+
+A Windows service that provide information to `upsd` compatible clients.
+
+### ntUPSd.Core: Support Library
+
+Provides many wrappers for Windows APIs used by `ntUPSd`.  This library allows the core logic of
+the daemon to remain clean and easy to follow.  It is a static library and therefore will now be
+present in binary release installations.
+
 ## TODOs
 
 In no particular priority.
 
-- WIP: Provides quicker service shutdown.
 - Implement complete protocol.
 - Create administration user interface.
 - Add support for mulitple batteries.

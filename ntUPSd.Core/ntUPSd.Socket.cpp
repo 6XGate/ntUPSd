@@ -347,7 +347,7 @@ namespace CTL
 				return hr;
 			}
 
-			if (::WSAEventSelect(s, hReadEvent, FD_READ) == SOCKET_ERROR)
+			if (::WSAEventSelect(s, hReadEvent, FD_READ | FD_CLOSE) == SOCKET_ERROR)
 			{
 				hr = CWinSock::GetLastError();
 				__analysis_assume(FAILED(hr));
