@@ -119,11 +119,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="readme.md" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="ntUPSd.COM.h" />
     <ClInclude Include="ntUPSd.COM.inl.h" />
+    <ClInclude Include="ntUPSd.Device.h" />
+    <ClInclude Include="ntUPSd.Device.inl.h" />
     <ClInclude Include="ntUPSd.Formatter.h" />
     <ClInclude Include="ntUPSd.Core.Base.h" />
     <ClInclude Include="ntUPSd.Core.h" />
@@ -142,6 +141,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ntUPSd.COM.cpp" />
+    <ClCompile Include="ntUPSd.Device.cpp" />
     <ClCompile Include="ntUPSd.Formatter.cpp" />
     <ClCompile Include="ntUPSd.ReplDriver.cpp" />
     <ClCompile Include="ntUPSd.ServerModule.cpp" />

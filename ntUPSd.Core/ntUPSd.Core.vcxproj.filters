@@ -66,6 +66,12 @@
     <ClInclude Include="ntUPSd.COM.inl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ntUPSd.Device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ntUPSd.Device.inl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -92,8 +98,8 @@
     <ClCompile Include="ntUPSd.COM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="readme.md" />
+    <ClCompile Include="ntUPSd.Device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

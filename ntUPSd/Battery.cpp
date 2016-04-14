@@ -37,7 +37,7 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 {
 	_ATLTRY
 	{
-		CAtlFile hBattery;
+		CDevice hBattery;
 		HRESULT hr = hBattery.Create(
 			pszDevicePath,
 			GENERIC_READ | GENERIC_WRITE,
@@ -55,16 +55,18 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 		DWORD dwWait = 0;
 
 		// First we need the battery tag.
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_TAG, &dwWait, sizeof(dwWait), &bqi.BatteryTag, sizeof(bqi.BatteryTag), &cbOut, nullptr))
+		hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_TAG, &dwWait, sizeof(dwWait), &bqi.BatteryTag, sizeof(bqi.BatteryTag), &cbOut);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		// Get the basic information.
 		bqi.InformationLevel = BatteryInformation;
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &m_BatteryInfo, sizeof(m_BatteryInfo), &cbOut, nullptr))
+		hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &m_BatteryInfo, sizeof(m_BatteryInfo), &cbOut);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		// Make sure the battery is a UPS.
@@ -73,10 +75,22 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 			return NTUPSD_E_NOT_UPS;
 		}
 
-		// Now that we have a tag, next get some static information.
-		CStringA strDeviceName, strManufacturerName, strSerialNumber;
+		if (m_BatteryInfo.DefaultAlert1 >= m_BatteryInfo.FullChargedCapacity)
+		{
+			// Normalize the low default alert if it makes no sense.
+			m_BatteryInfo.DefaultAlert1 = m_BatteryInfo.FullChargedCapacity * 20 / 100;
+		}
 
-		// First the battery name.
+		if (m_BatteryInfo.DefaultAlert2 >= m_BatteryInfo.FullChargedCapacity)
+		{
+			// Normalize the warning default alert if it makes no sense.
+			m_BatteryInfo.DefaultAlert2 = m_BatteryInfo.FullChargedCapacity * 50 / 100;
+		}
+
+		// Now that we have a tag, next get some static information.
+		CStringA strDeviceName, strManufacturerName, strSerialNumber, strManufatureDate, strType;
+
+		// The battery name.
 		hr = GetStringInfo(hBattery, bqi.BatteryTag, BatteryDeviceName, strDeviceName);
 		if (FAILED(hr))
 		{
@@ -90,21 +104,78 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 			return hr;
 		}
 
-		// Finally, the serial number.
+		// The serial number.
 		hr = GetStringInfo(hBattery, bqi.BatteryTag, BatterySerialNumber, strSerialNumber);
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
-		m_rgVariables.SetAt("driver.name", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.name", "usbhid-ups"));
-		m_rgVariables.SetAt("battery.charge", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.charge", &CBattery::GetBatteryCharge));
+		// The manufagure date.
+		BATTERY_MANUFACTURE_DATE bmd = { 0 };
+		bqi.InformationLevel = BatteryManufactureDate;
+		if (DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &bmd, sizeof(bmd), &cbOut, nullptr))
+		{
+			strManufatureDate.Format("%04hu/%02hu/%02hu", bmd.Year, static_cast<USHORT>(bmd.Month), static_cast<USHORT>(bmd.Day));
+		}
+
+		// The battery type.
+		size_t i = 0;
+		SecureZeroMemory(m_szType, sizeof(m_szType));
+		for (char ch : m_BatteryInfo.Chemistry)
+		{
+			if (ch == 0)
+			{
+				break;
+			}
+
+			m_szType[i++] = ch;
+		}
+
+		// Calculate some static values.
+		CStringA strLowBatteryPercentage, strWarningBatteryPercentage;
+		strLowBatteryPercentage.Format("%lu", m_BatteryInfo.DefaultAlert1 * 100 / m_BatteryInfo.DesignedCapacity);
+		strWarningBatteryPercentage.Format("%lu", m_BatteryInfo.DefaultAlert2 * 100 / m_BatteryInfo.DesignedCapacity);
+
+		m_rgVariables.SetAt("device.model", _AtlNew<CBatteryStaticVariable>("usbhid", "device.model", strDeviceName));
+		m_rgVariables.SetAt("device.mfr", _AtlNew<CBatteryStaticVariable>("usbhid", "device.mfr", strManufacturerName));
+		m_rgVariables.SetAt("device.serial", _AtlNew<CBatteryStaticVariable>("usbhid", "device.serial", strSerialNumber));
+		m_rgVariables.SetAt("device.type", _AtlNew<CBatteryStaticVariable>("usbhid", "device.type", "ups"));
+
 		m_rgVariables.SetAt("ups.status", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "ups.status", &CBattery::GetUpsStatus));
+		m_rgVariables.SetAt("ups.model", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.model", strDeviceName));
+		m_rgVariables.SetAt("ups.mfr", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.mfr", strManufacturerName));
+		m_rgVariables.SetAt("ups.serial", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.serial", strSerialNumber));
+		m_rgVariables.SetAt("ups.temperature", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "ups.temperature", &CBattery::GetBatteryTemperature));
+
+		m_rgVariables.SetAt("driver.name", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.name", "usbhid-ups"));
+		m_rgVariables.SetAt("driver.version", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.version", DAEMON_VERSION));
+		m_rgVariables.SetAt("driver.version.internal", _AtlNew<CBatteryStaticVariable>("usbhid", "driver.version.internal", DAEMON_VERSION));
+
+		m_rgVariables.SetAt("battery.charge", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.charge", &CBattery::GetBatteryCharge));
+		m_rgVariables.SetAt("battery.charge.low", _AtlNew<CBatteryStaticVariable>("usbhid", "battery.charge.low", strLowBatteryPercentage));
+		m_rgVariables.SetAt("battery.charge.warning", _AtlNew<CBatteryStaticVariable>("usbhid", "battery.charge.warning", strWarningBatteryPercentage));
+		m_rgVariables.SetAt("battery.charger.status", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.charger.status", &CBattery::GetBatteryChargerStatus));
+		m_rgVariables.SetAt("battery.temperature", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.temperature", &CBattery::GetBatteryTemperature));
+		m_rgVariables.SetAt("battery.type", _AtlNew<CBatteryStaticVariable>("usbhid", "battery.type", m_szType));
+		m_rgVariables.SetAt("battery.voltage", _AtlNew<CBatteryDynamicVariable>(*this, "usbhid", "battery.voltage", &CBattery::GetBatteryVoltage));
+
+		// Optional; the manufacture date.
+		if (!strManufatureDate.IsEmpty())
+		{
+			m_rgVariables.SetAt("ups.mfr.date", _AtlNew<CBatteryStaticVariable>("usbhid", "ups.mfr.date", strManufatureDate));
+			m_rgVariables.SetAt("battery.mfr.date", _AtlNew<CBatteryStaticVariable>("usbhid", "battery.mfr.date", strManufatureDate));
+		}
+
+		// Server information;
+		m_rgVariables.SetAt("server.info", _AtlNew<CBatteryStaticVariable>("usbhid", "server.info", SERVER_INFO));
+		m_rgVariables.SetAt("server.version", _AtlNew<CBatteryStaticVariable>("usbhid", "server.version", DAEMON_VERSION));
 
 		m_nBatteryTag = bqi.BatteryTag;
 		m_strKeyName = "usbhid"; // Just going to use this key name for now.
 		m_strDeviceName = strDeviceName;
 		m_strManufacturerName = strManufacturerName;
+		m_strManufacturerDate = strManufatureDate;
 		m_strSerialNumber = strSerialNumber;
 		m_hBattery.Attach(hBattery.Detach());
 		return S_OK;
@@ -184,7 +255,7 @@ HRESULT CBattery::ToUtf8(_In_z_ LPCWSTR pszValue, CStringA &rstrValue) noexcept
 	}
 }
 
-HRESULT CBattery::GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
+HRESULT CBattery::GetStringInfo(CDevice &hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
 {
 	DWORD cchBuffer = 128;
 	CAtlArray<WCHAR> pszBuffer;
@@ -193,12 +264,12 @@ HRESULT CBattery::GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY
 	{
 		pszBuffer.SetCount(cchBuffer);
 		DWORD cbBuffer = cchBuffer * sizeof(WCHAR), cbReturned;
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), pszBuffer.GetData(), cbBuffer, &cbReturned, nullptr))
+		HRESULT hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), pszBuffer.GetData(), cbBuffer, &cbReturned);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError != ERROR_INSUFFICIENT_BUFFER)
+			if (hr != E_NOT_SUFFICIENT_BUFFER)
 			{
-				return AtlHresultFromWin32(dwError);
+				return hr;
 			}
 
 			cchBuffer += 128;
@@ -216,28 +287,51 @@ HRESULT CBattery::GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStr
 	return GetStringInfo(m_hBattery, m_nBatteryTag, eInfoLevel, rstrValue);
 }
 
+template <typename InStruct, typename OutStruct>
+HRESULT CBattery::GetStructData(DWORD dwIoCtlCode, _In_ const InStruct *pInData, _Out_ OutStruct *pOutData) noexcept
+{
+	DWORD cbInStruct = static_cast<DWORD>(sizeof(InStruct));
+	DWORD cbOutStruct = static_cast<DWORD>(sizeof(OutStruct));
+	HRESULT hr = m_hBattery.DeviceIoControl(dwIoCtlCode, pInData, cbInStruct, pOutData, cbOutStruct);
+	if (FAILED(hr))
+	{
+		if (hr == __HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION))
+		{
+			hr = NUT_E_VARNOTSUPPORTED;
+		}
+	}
+
+	return hr;
+}
+
+template<typename OutStruct>
+HRESULT CBattery::GetInfoData(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, OutStruct * pOutData) noexcept
+{
+	BATTERY_QUERY_INFORMATION bqi = { m_nBatteryTag, eInfoLevel };
+	return GetStructData(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, pOutData);
+}
+
+HRESULT CBattery::GetStatusData(BATTERY_STATUS * pbs)
+{
+	BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
+	return GetStructData(IOCTL_BATTERY_QUERY_STATUS, &bws, pbs);
+}
+
 HRESULT CBattery::GetUpsStatus(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		if (bs.Capacity > m_BatteryInfo.FullChargedCapacity)
 		{
 			bs.Capacity = m_BatteryInfo.FullChargedCapacity;
 		}
-
-		// TODO: Add to _battery.charger.status_.
-		//if (bs.PowerState & BATTERY_CHARGING)
-		//{
-		//	rstrValue.Append("CHRG ");
-		//}
 
 		if (bs.PowerState & BATTERY_POWER_ON_LINE)
 		{
@@ -249,7 +343,7 @@ HRESULT CBattery::GetUpsStatus(CStringA &rstrValue) noexcept
 			rstrValue.Append("OB ");
 		}
 
-		if (bs.Capacity <= m_BatteryInfo.DefaultAlert2)
+		if (bs.Capacity <= m_BatteryInfo.DefaultAlert1)
 		{
 			rstrValue.Append("LB ");
 		}
@@ -276,12 +370,11 @@ HRESULT CBattery::GetBatteryCharge(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		if (bs.Capacity > m_BatteryInfo.FullChargedCapacity)
@@ -291,6 +384,100 @@ HRESULT CBattery::GetBatteryCharge(CStringA &rstrValue) noexcept
 
 		ULONGLONG nRemainingCapacity = bs.Capacity * 100 / m_BatteryInfo.FullChargedCapacity;
 		rstrValue.AppendFormat("%I64u", nRemainingCapacity);
+		return S_OK;
+	}
+	_ATLCATCH(ex)
+	{
+		return ex.m_hr;
+	}
+	_ATLCATCHALL()
+	{
+		return E_FAIL;
+	}
+}
+
+HRESULT CBattery::GetBatteryChargerStatus(CStringA &rstrValue) noexcept
+{
+	_ATLTRY
+	{
+		BATTERY_STATUS bs;
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		if (bs.PowerState & BATTERY_CHARGING)
+		{
+			rstrValue = "charging";
+		}
+		else if (bs.PowerState & BATTERY_DISCHARGING)
+		{
+			rstrValue = "discharging";
+		}
+		else
+		{
+			rstrValue = "resting";
+		}
+
+		rstrValue.Trim();
+		return S_OK;
+	}
+	_ATLCATCH(ex)
+	{
+		return ex.m_hr;
+	}
+	_ATLCATCHALL()
+	{
+		return E_FAIL;
+	}
+}
+
+HRESULT CBattery::GetBatteryTemperature(CStringA & rstrValue) noexcept
+{
+	_ATLTRY
+	{
+		ULONG nTemperature;
+		HRESULT hr = GetInfoData(BatteryTemperature, &nTemperature);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		// C = K - 273.15; // C = nTemperature - 2732 / 10;
+		float dTemperature = static_cast<float>(static_cast<int>(nTemperature) - 2732) / 10.0f;
+		rstrValue.AppendFormat("%f", dTemperature);
+		return S_OK;
+	}
+	_ATLCATCH(ex)
+	{
+		return ex.m_hr;
+	}
+	_ATLCATCHALL()
+	{
+		return E_FAIL;
+	}
+}
+
+HRESULT CBattery::GetBatteryVoltage(CStringA & rstrValue) noexcept
+{
+	_ATLTRY
+	{
+		BATTERY_STATUS bs;
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		if (bs.Voltage == BATTERY_UNKNOWN_VOLTAGE)
+		{
+			return NUT_E_VARNOTSUPPORTED;
+		}
+
+		double dVoltage = static_cast<double>(bs.Voltage) / 1000.0f;
+
+		rstrValue.AppendFormat("%f", dVoltage);
 		return S_OK;
 	}
 	_ATLCATCH(ex)

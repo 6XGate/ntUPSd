@@ -76,9 +76,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.md" />
-  </ItemGroup>
-  <ItemGroup>
     <CompileMessages Include="LoggedEvents.mc">
       <Filter>Resource Files\Data</Filter>
     </CompileMessages>

@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 // Project Module Headers:
 #include "ntUPSd.COM.h"
+#include "ntUPSd.Device.h"
 #include "ntUPSd.Formatter.h"
 #include "ntUPSd.ReplDriver.h"
 #include "ntUPSd.ServerModule.h"
