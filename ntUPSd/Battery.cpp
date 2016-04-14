@@ -37,7 +37,7 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 {
 	_ATLTRY
 	{
-		CAtlFile hBattery;
+		CDevice hBattery;
 		HRESULT hr = hBattery.Create(
 			pszDevicePath,
 			GENERIC_READ | GENERIC_WRITE,
@@ -55,16 +55,18 @@ HRESULT CBattery::Open(_In_z_ LPCWSTR pszDevicePath) noexcept
 		DWORD dwWait = 0;
 
 		// First we need the battery tag.
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_TAG, &dwWait, sizeof(dwWait), &bqi.BatteryTag, sizeof(bqi.BatteryTag), &cbOut, nullptr))
+		hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_TAG, &dwWait, sizeof(dwWait), &bqi.BatteryTag, sizeof(bqi.BatteryTag), &cbOut);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		// Get the basic information.
 		bqi.InformationLevel = BatteryInformation;
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &m_BatteryInfo, sizeof(m_BatteryInfo), &cbOut, nullptr))
+		hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &m_BatteryInfo, sizeof(m_BatteryInfo), &cbOut);
+		if (FAILED(hr))
 		{
-			return AtlHresultFromLastError();
+			return hr;
 		}
 
 		// Make sure the battery is a UPS.
@@ -253,7 +255,7 @@ HRESULT CBattery::ToUtf8(_In_z_ LPCWSTR pszValue, CStringA &rstrValue) noexcept
 	}
 }
 
-HRESULT CBattery::GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
+HRESULT CBattery::GetStringInfo(CDevice &hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept
 {
 	DWORD cchBuffer = 128;
 	CAtlArray<WCHAR> pszBuffer;
@@ -262,12 +264,12 @@ HRESULT CBattery::GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY
 	{
 		pszBuffer.SetCount(cchBuffer);
 		DWORD cbBuffer = cchBuffer * sizeof(WCHAR), cbReturned;
-		if (!DeviceIoControl(hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), pszBuffer.GetData(), cbBuffer, &cbReturned, nullptr))
+		HRESULT hr = hBattery.DeviceIoControl(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), pszBuffer.GetData(), cbBuffer, &cbReturned);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError != ERROR_INSUFFICIENT_BUFFER)
+			if (hr != E_NOT_SUFFICIENT_BUFFER)
 			{
-				return AtlHresultFromWin32(dwError);
+				return hr;
 			}
 
 			cchBuffer += 128;
@@ -285,22 +287,45 @@ HRESULT CBattery::GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStr
 	return GetStringInfo(m_hBattery, m_nBatteryTag, eInfoLevel, rstrValue);
 }
 
+template <typename InStruct, typename OutStruct>
+HRESULT CBattery::GetStructData(DWORD dwIoCtlCode, _In_ const InStruct *pInData, _Out_ OutStruct *pOutData) noexcept
+{
+	DWORD cbInStruct = static_cast<DWORD>(sizeof(InStruct));
+	DWORD cbOutStruct = static_cast<DWORD>(sizeof(OutStruct));
+	HRESULT hr = m_hBattery.DeviceIoControl(dwIoCtlCode, pInData, cbInStruct, pOutData, cbOutStruct);
+	if (FAILED(hr))
+	{
+		if (hr == __HRESULT_FROM_WIN32(ERROR_INVALID_FUNCTION))
+		{
+			hr = NUT_E_VARNOTSUPPORTED;
+		}
+	}
+
+	return hr;
+}
+
+template<typename OutStruct>
+HRESULT CBattery::GetInfoData(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, OutStruct * pOutData) noexcept
+{
+	BATTERY_QUERY_INFORMATION bqi = { m_nBatteryTag, eInfoLevel };
+	return GetStructData(IOCTL_BATTERY_QUERY_INFORMATION, &bqi, pOutData);
+}
+
+HRESULT CBattery::GetStatusData(BATTERY_STATUS * pbs)
+{
+	BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
+	return GetStructData(IOCTL_BATTERY_QUERY_STATUS, &bws, pbs);
+}
+
 HRESULT CBattery::GetUpsStatus(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError == ERROR_INVALID_FUNCTION)
-			{
-				return NUT_E_VARNOTSUPPORTED;
-			}
-
-			return AtlHresultFromWin32(dwError);
+			return hr;
 		}
 
 		if (bs.Capacity > m_BatteryInfo.FullChargedCapacity)
@@ -345,18 +370,11 @@ HRESULT CBattery::GetBatteryCharge(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError == ERROR_INVALID_FUNCTION)
-			{
-				return NUT_E_VARNOTSUPPORTED;
-			}
-
-			return AtlHresultFromWin32(dwError);
+			return hr;
 		}
 
 		if (bs.Capacity > m_BatteryInfo.FullChargedCapacity)
@@ -382,18 +400,11 @@ HRESULT CBattery::GetBatteryChargerStatus(CStringA &rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError == ERROR_INVALID_FUNCTION)
-			{
-				return NUT_E_VARNOTSUPPORTED;
-			}
-
-			return AtlHresultFromWin32(dwError);
+			return hr;
 		}
 
 		if (bs.PowerState & BATTERY_CHARGING)
@@ -426,26 +437,19 @@ HRESULT CBattery::GetBatteryTemperature(CStringA & rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
-	ULONG nTemperature;
-	BATTERY_QUERY_INFORMATION bqi = { m_nBatteryTag, BatteryTemperature };
-	if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_INFORMATION, &bqi, sizeof(bqi), &nTemperature, sizeof(nTemperature), &cb, nullptr))
-	{
-		DWORD dwError = GetLastError();
-		if (dwError == ERROR_INVALID_FUNCTION)
+		ULONG nTemperature;
+		HRESULT hr = GetInfoData(BatteryTemperature, &nTemperature);
+		if (FAILED(hr))
 		{
-			return NUT_E_VARNOTSUPPORTED;
+			return hr;
 		}
 
-		return AtlHresultFromWin32(dwError);
+		// C = K - 273.15; // C = nTemperature - 2732 / 10;
+		float dTemperature = static_cast<float>(static_cast<int>(nTemperature) - 2732) / 10.0f;
+		rstrValue.AppendFormat("%f", dTemperature);
+		return S_OK;
 	}
-
-	// C = K - 273.15; // C = nTemperature - 2732 / 10;
-	float dTemperature = static_cast<float>(static_cast<int>(nTemperature) - 2732) / 10.0f;
-	rstrValue.AppendFormat("%f", dTemperature);
-	return S_OK;
-	}
-		_ATLCATCH(ex)
+	_ATLCATCH(ex)
 	{
 		return ex.m_hr;
 	}
@@ -459,18 +463,11 @@ HRESULT CBattery::GetBatteryVoltage(CStringA & rstrValue) noexcept
 {
 	_ATLTRY
 	{
-		DWORD cb;
 		BATTERY_STATUS bs;
-		BATTERY_WAIT_STATUS bws = { m_nBatteryTag, 0, 0xF, ULONG_MAX, ULONG_MAX };
-		if (!DeviceIoControl(m_hBattery, IOCTL_BATTERY_QUERY_STATUS, &bws, sizeof(bws), &bs, sizeof(bs), &cb, nullptr))
+		HRESULT hr = GetStatusData(&bs);
+		if (FAILED(hr))
 		{
-			DWORD dwError = GetLastError();
-			if (dwError == ERROR_INVALID_FUNCTION)
-			{
-				return NUT_E_VARNOTSUPPORTED;
-			}
-
-			return AtlHresultFromWin32(dwError);
+			return hr;
 		}
 
 		if (bs.Voltage == BATTERY_UNKNOWN_VOLTAGE)

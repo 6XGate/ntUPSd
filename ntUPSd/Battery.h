@@ -58,7 +58,7 @@ public:
 	HRESULT RenderListUpsEntry(CStringA &strOutput) noexcept;
 
 private:
-	CAtlFile m_hBattery;
+	CDevice m_hBattery;
 	ULONG m_nBatteryTag = 0;
 	CHAR m_szType[5];
 	CStringA m_strKeyName;
@@ -71,8 +71,14 @@ private:
 	CAtlMap<CStringA, CComPtr<CBatteryVariable>> m_rgVariables;
 
 	static HRESULT ToUtf8(_In_z_ LPCWSTR pszValue, CStringA &rstrValue) noexcept;
-	static HRESULT GetStringInfo(_In_ HANDLE hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept;
+	static HRESULT GetStringInfo(CDevice &hBattery, ULONG nBatteryTag, BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept;
+
 	HRESULT GetStringInfo(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, CStringA &rstrValue) noexcept;
+	template <typename InStruct, typename OutStruct>
+	HRESULT GetStructData(DWORD dwIoCtlCode, _In_ const InStruct *pInData, _Out_ OutStruct *pOutData) noexcept;
+	template <typename OutStruct>
+	HRESULT GetInfoData(BATTERY_QUERY_INFORMATION_LEVEL eInfoLevel, _Out_ OutStruct *pOutData) noexcept;
+	HRESULT GetStatusData(BATTERY_STATUS *pbs);
 
 	HRESULT GetUpsStatus(CStringA &rstrValue) noexcept;
 	HRESULT GetBatteryCharge(CStringA &rstrValue) noexcept;
