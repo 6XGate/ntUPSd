@@ -1,5 +1,7 @@
 # Network UPS Tools Services for Windows
 
+[![Build status](https://ci.appveyor.com/api/projects/status/q52y8atr8qr4nxmm/branch/develop)](https://ci.appveyor.com/project/6XGate/ntupsd/branch/develop)
+
 Network UPS Tools Services for Windows provides tools and services to run an `upsd` compatible
 server to report the status of UPS devices connected to a system or server in master mode.  It
 allows other Network UPS Tools slave daemons and monitoring clients access to UPS information using
@@ -42,6 +44,10 @@ A Windows service that provide information to `upsd` compatible clients.
 Provides many wrappers for Windows APIs used by `ntUPSd`.  This library allows the core logic of
 the daemon to remain clean and easy to follow.  It is a static library and therefore will now be
 present in binary release installations.
+
+### ntUPSd.Setup: Installation
+
+The MSI and setup bootstrap for installing ntUPSd.
 
 ## TODOs
 

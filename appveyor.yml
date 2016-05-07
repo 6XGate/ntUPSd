@@ -1,0 +1,31 @@
+version: 'Build {build}'
+branches:
+  only:
+  - develop
+  - master
+image: Visual Studio 2015
+configuration:
+- Release
+- Debug
+build:
+  project: ntUPSd.Setup\ntUPSd.Setup.wixproj
+  verbosity: minimal
+artifacts:
+- path: bin/x64/$(configuration)/*.msi
+- path: bin/x64/$(configuration)/*.exe
+- path: bin/x64/$(configuration)/*.dll
+- path: bin/x64/$(configuration)/*.lib
+- path: bin/x64/$(configuration)/*.pdb
+- path: bin/x64/$(configuration)/*.wixpdb
+- path: bin/x86/$(configuration)/*.msi
+- path: bin/x86/$(configuration)/*.exe
+- path: bin/x86/$(configuration)/*.dll
+- path: bin/x86/$(configuration)/*.lib
+- path: bin/x86/$(configuration)/*.pdb
+- path: bin/x86/$(configuration)/*.wixpdb
+- path: bin/AnyCPU/$(configuration)/*.msi
+- path: bin/AnyCPU/$(configuration)/*.exe
+- path: bin/AnyCPU/$(configuration)/*.dll
+- path: bin/AnyCPU/$(configuration)/*.lib
+- path: bin/AnyCPU/$(configuration)/*.pdb
+- path: bin/AnyCPU/$(configuration)/*.wixpdb
