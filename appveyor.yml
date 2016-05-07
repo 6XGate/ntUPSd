@@ -4,7 +4,9 @@ branches:
   - develop
   - master
 image: Visual Studio 2015
-configuration: Release
+configuration:
+- Release
+- Debug
 build:
   project: ntUPSd.Setup\ntUPSd.Setup.wixproj
   verbosity: minimal
