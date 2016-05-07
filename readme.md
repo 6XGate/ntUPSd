@@ -45,6 +45,10 @@ Provides many wrappers for Windows APIs used by `ntUPSd`.  This library allows t
 the daemon to remain clean and easy to follow.  It is a static library and therefore will now be
 present in binary release installations.
 
+### ntUPSd.Setup: Installation
+
+The MSI and setup bootstrap for installing ntUPSd.
+
 ## TODOs
 
 In no particular priority.
