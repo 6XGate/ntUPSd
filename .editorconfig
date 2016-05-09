@@ -24,3 +24,8 @@ indent_size = 2
 [*.{c,cc,cpp,cxx,h,hh,hpp,hxx}]
 indent_style = tab
 indent_size = 4
+
+# C# Source Code Settings
+[*.cs]
+indent_style = tab
+indent_size = 4
