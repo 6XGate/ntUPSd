@@ -29,3 +29,5 @@ artifacts:
 - path: bin/AnyCPU/$(configuration)/*.lib
 - path: bin/AnyCPU/$(configuration)/*.pdb
 - path: bin/AnyCPU/$(configuration)/*.wixpdb
+after_test:
+- bash <(curl -s https://codecov.io/bash)
